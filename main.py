@@ -7,18 +7,26 @@ def write_table_to_document(content, document, table, tableName):
     schema = table[tableName]
     document.add_paragraph(tableName, style = "Heading 1")
     for i in range(0, len(content)):
-        document.add_paragraph(tableName + " " + str(i + 1) + "\n", style = "Heading 2")
+        document.add_paragraph(content[i][1], style = "Heading 2")
         for j in range(0, len(content[i])):
             document.add_paragraph(schema[j] + ": " + str(content[i][j]), style = "ListBullet")
-            document.add_paragraph("\n")
 
 
 def get_resources(conn):
-    sql = 'SELECT * FROM Resources'
+    ressql = 'SELECT * FROM Resources'
     c = conn.cursor()
-    c.execute(sql)
-    all_rows = c.fetchall()
-    return all_rows
+    c.execute(ressql)
+    resources = []
+    raw_resources = c.fetchall()
+    for i in range(0, len(raw_resources)):
+        pathsql = 'SELECT PathSettingsName FROM PathSettings WHERE PathSettingsId = ' + str(raw_resources[i][2])
+        c.execute(pathsql)
+        path_settings_name = c.fetchone()
+        secsql = 'SELECT SecurityEnvironmentName FROM SecurityEnvironments WHERE SecurityEnvironmentId = ' + str(raw_resources[i][3])
+        c.execute(secsql)
+        sec_env_name = c.fetchone()
+        resources.append((raw_resources[i][0], raw_resources[i][1], path_settings_name[0], sec_env_name[0], raw_resources[i][4]))
+    return resources
 
 
 def get_path_settings(conn):
@@ -77,6 +85,8 @@ def get_schema(conn):
 
                 table[tableName] = tableElement
     return table
+
+
 
 def open_db(db_file):
     conn = sqlite3.connect(db_file)
